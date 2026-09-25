@@ -1,0 +1,166 @@
+---
+import { Image, getImage } from 'astro:assets';
+import { media, imageFor, videoSrc, indexOf, type MediaItem } from '../data/alaska';
+
+interface Props {
+  /** Key from src/data/alaska.ts, e.g. "052". */
+  id: string;
+}
+
+const { id } = Astro.props;
+const index = indexOf(id);
+if (index === -1) throw new Error(`<Figure id="${id}"> is not in src/data/alaska.ts`);
+
+const item: MediaItem = media[index];
+const image = imageFor(item);
+
+// Videos need a plain URL for the poster attribute. Resolve it to a WebP at the
+// video's own size; the untouched original would be a 2048px JPEG.
+const poster =
+  item.kind === 'video'
+    ? (await getImage({ src: image, format: 'webp', width: item.width, quality: 78 })).src
+    : undefined;
+---
+
+{/*
+  Photos are a <button> wrapping the image: the whole thing opens the carousel.
+  Videos play inline instead — nesting <video controls> in a button would break
+  both — so they get a small expand control in the corner that opens the same
+  carousel. Either way it's a real button, so it's keyboard-reachable and ships
+  no per-figure JS; one delegated listener in Lightbox.tsx handles all of them.
+*/}
+<figure class={item.kind}>
+  {
+    item.kind === 'video' ? (
+      <div class="video-wrap">
+        <video
+          controls
+          preload="metadata"
+          playsinline
+          poster={poster}
+          width={item.width}
+          height={item.height}
+        >
+          <source src={videoSrc(item)} type="video/mp4" />
+        </video>
+        <button type="button" data-lightbox={index} aria-label="Open in carousel">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path
+              d="M9 4H4v5M15 4h5v5M15 20h5v-5M9 20H4v-5"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        </button>
+      </div>
+    ) : (
+      <button type="button" data-lightbox={index} aria-label={`Open: ${item.caption}`}>
+        {/* <Image>, not <Picture>: WebP is universally supported, so the
+            second full set of JPEG fallbacks would double the build output
+            for nothing. */}
+        <Image
+          src={image}
+          format="webp"
+          widths={[768, 1280, 2048]}
+          sizes="(max-width: 760px) 100vw, 720px"
+          alt={item.caption}
+          loading="lazy"
+          decoding="async"
+        />
+      </button>
+    )
+  }
+  <figcaption>{item.caption}</figcaption>
+</figure>
+
+<style>
+  figure {
+    margin: 2rem 0;
+  }
+
+  /* Reset the button so it reads as a bare image, not a control. */
+  button {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: none;
+    background: none;
+    font: inherit;
+    color: inherit;
+    cursor: zoom-in;
+  }
+
+  button :global(img) {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    background: #f0f0f0;
+  }
+
+  .video-wrap {
+    position: relative;
+  }
+
+  video {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: 4px;
+    background: #000;
+  }
+
+  /* Sits clear of the native control bar along the bottom. */
+  .video-wrap button {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 2rem;
+    height: 2rem;
+    display: grid;
+    place-items: center;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.45);
+    color: #fff;
+    cursor: pointer;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .video-wrap:hover button,
+  .video-wrap button:focus-visible {
+    opacity: 1;
+  }
+
+  /* No hover on touch, so always show it there. */
+  @media (hover: none) {
+    .video-wrap button {
+      opacity: 1;
+    }
+  }
+
+  .video-wrap button svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  figcaption {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    line-height: 1.5;
+    color: #777;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    button :global(img) {
+      background: #1e1e1e;
+    }
+
+    figcaption {
+      color: #999;
+    }
+  }
+</style>

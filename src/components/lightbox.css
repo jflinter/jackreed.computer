@@ -1,0 +1,40 @@
+/* Tone the library's chrome down to match the site: quiet controls, a caption
+   that reads like the one under the figure rather than a UI label. */
+.yarl__root {
+  --yarl__color_backdrop: rgba(10, 10, 10, 0.98);
+  --yarl__color_button: rgba(255, 255, 255, 0.65);
+  --yarl__color_button_active: #fff;
+  --yarl__color_button_disabled: rgba(255, 255, 255, 0.2);
+  --yarl__button_filter: none;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+
+/* The caption overlays the photo, so it sits on its own rounded panel to stay
+   legible against a bright one — sky, snow, a sunlit rock face. */
+.yarl__slide_captions_container {
+  background: none;
+  text-align: center;
+  padding: 0 1rem 1.5rem;
+}
+
+.yarl__slide_description {
+  display: inline-block;
+  max-width: 34rem;
+  padding: 0.5rem 0.85rem;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.62);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.95);
+  text-align: center;
+  text-wrap: pretty;
+}
+
+/* The library animates these in on open; skip that when the reader has asked
+   for less motion. */
+@media (prefers-reduced-motion: reduce) {
+  .yarl__root * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

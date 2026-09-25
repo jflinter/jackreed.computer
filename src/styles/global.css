@@ -53,3 +53,20 @@ a:hover { text-decoration: none; }
     h2 { color: #666; }
     .desc { color: #666; }
 }
+
+/* Pages carrying full-width photos opt into a wider column via the layout's
+   `width: wide` frontmatter. The homepage stays at 480px. */
+body.wide { max-width: 720px; }
+
+/* Route map endpoints. Defined here because maplibre creates these markers at
+   runtime, outside any component's scoped styles. */
+.route-map { width: 100%; height: 100%; }
+
+.route-endpoint {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #d6452c;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.15);
+}

@@ -1,18 +1,41 @@
 ---
 import BaseLayout from './BaseLayout.astro';
 
-interface Props {
+import type { ImageMetadata } from 'astro';
+
+interface PageMeta {
   title: string;
   description?: string;
-  frontmatter?: { title: string; description?: string };
+  width?: 'narrow' | 'wide';
+  /** Social card, as a path under src/assets/ — e.g. "alaska/454.jpg". MDX
+      frontmatter can't hold an import, so it names the file and we resolve it. */
+  image?: string;
+}
+
+interface Props extends PageMeta {
+  frontmatter?: PageMeta;
 }
 
 // When used via an MDX file's `layout:` frontmatter key, Astro passes the
 // frontmatter object rather than individual props.
-const { title, description } = Astro.props.frontmatter ?? Astro.props;
+const { title, description, width, image }: PageMeta =
+  Astro.props.frontmatter ?? Astro.props;
+
+// Lazy on purpose: an eager glob makes Vite emit every original under
+// src/assets/, which on the Alaska post is ~19MB of files nothing links to.
+const assets = import.meta.glob<ImageMetadata>('../assets/**/*.{jpg,jpeg,png,webp}', {
+  import: 'default',
+});
+
+let card: ImageMetadata | undefined;
+if (image) {
+  const load = assets[`../assets/${image}`];
+  if (!load) throw new Error(`Social card not found: src/assets/${image}`);
+  card = await load();
+}
 ---
 
-<BaseLayout title={title} description={description}>
+<BaseLayout title={title} description={description} width={width} image={card}>
   <h1>{title}</h1>
   <article class="prose">
     <slot />
@@ -102,6 +125,13 @@ const { title, description } = Astro.props.frontmatter ?? Astro.props;
   .prose :global(pre code) {
     background: none;
     padding: 0;
+  }
+
+  /* Figures run the full column width; Figure.astro styles the media and
+     caption themselves. */
+  .prose :global(figure) {
+    margin-left: 0;
+    margin-right: 0;
   }
 
   .prose :global(img),

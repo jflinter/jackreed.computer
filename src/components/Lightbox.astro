@@ -1,0 +1,41 @@
+---
+import { getImage } from 'astro:assets';
+import LightboxIsland, { type Slide } from './Lightbox.tsx';
+import { media, imageFor, videoSrc } from '../data/alaska';
+
+/**
+ * Resolves one full-screen-sized WebP per item at build time and hands the
+ * finished list to the island, so the client never has to know about Astro's
+ * asset pipeline. Include this once per page, anywhere.
+ */
+const slides: Slide[] = await Promise.all(
+  media.map(async (item) => {
+    const image = imageFor(item);
+    const width = Math.min(image.width, 2048);
+    const height = Math.round((width * image.height) / image.width);
+    const full = await getImage({ src: image, format: 'webp', width, quality: 82 });
+
+    if (item.kind === 'video') {
+      return {
+        type: 'video',
+        poster: full.src,
+        width: item.width,
+        height: item.height,
+        description: item.caption,
+        sources: [{ src: videoSrc(item), type: 'video/mp4' }],
+      };
+    }
+
+    return {
+      type: 'image',
+      src: full.src,
+      width,
+      height,
+      alt: item.caption,
+      description: item.caption,
+    };
+  }),
+);
+---
+
+<LightboxIsland slides={slides} client:idle />

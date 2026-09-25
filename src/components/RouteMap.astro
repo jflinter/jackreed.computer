@@ -1,0 +1,77 @@
+---
+import type { Feature, LineString } from 'geojson';
+import RouteMapIsland from './RouteMapIsland.tsx';
+import { routeMaps } from '../data/alaska';
+
+interface Props {
+  /** Key from `routeMaps` in src/data/alaska.ts. */
+  id: string;
+}
+
+const { id } = Astro.props;
+const def = routeMaps[id];
+if (!def) throw new Error(`<RouteMap id="${id}"> is not in routeMaps`);
+
+// Every file in this directory is a LineString Feature; see its README.
+const routes = import.meta.glob<Feature<LineString>>('../data/routes/*.geo.json', {
+  eager: true,
+  import: 'default',
+});
+
+const load = (name: string) => {
+  const feature = routes[`../data/routes/${name}.geo.json`];
+  if (!feature) throw new Error(`Missing route geometry: src/data/routes/${name}.geo.json`);
+  return feature;
+};
+
+const key = import.meta.env.PUBLIC_MAPTILER_KEY;
+---
+
+<figure>
+  <div class="map" style={`aspect-ratio: ${def.aspect};`}>
+    {
+      key ? (
+        <RouteMapIsland
+          client:visible
+          apiKey={key}
+          mode={def.mode}
+          route={load(def.id)}
+          under={def.under ? load(def.under.route) : undefined}
+        />
+      ) : (
+        /* No key at build time: render a quiet placeholder rather than failing
+           the build. See README — PUBLIC_MAPTILER_KEY must be set locally and
+           in the Cloudflare Workers Build environment. */
+        <p class="missing">Map unavailable — PUBLIC_MAPTILER_KEY is not set.</p>
+      )
+    }
+  </div>
+</figure>
+
+<style>
+  figure {
+    margin: 2rem 0;
+  }
+
+  .map {
+    width: 100%;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #eceae5;
+  }
+
+  .missing {
+    display: grid;
+    place-items: center;
+    height: 100%;
+    margin: 0;
+    font-size: 0.85rem;
+    color: #999;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .map {
+      background: #1e1e1e;
+    }
+  }
+</style>

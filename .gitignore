@@ -3,3 +3,7 @@ dist/
 .astro/
 .wrangler/
 .DS_Store
+
+# Local only. Astro inlines PUBLIC_* into the client bundle, so the MapTiler
+# key is public once deployed regardless — this just keeps it out of git.
+.env
